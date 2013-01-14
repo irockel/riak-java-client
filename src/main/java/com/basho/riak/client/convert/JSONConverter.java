@@ -45,13 +45,19 @@ import com.basho.riak.client.query.indexes.RiakIndexes;
  */
 public class JSONConverter<T> implements Converter<T> {
 
-    private final ObjectMapper objectMapper = new ObjectMapper();
+    private static ObjectMapper objectMapper;
     private final Class<T> clazz;
     private final String bucket;
     private final UsermetaConverter<T> usermetaConverter;
     private final RiakIndexConverter<T> riakIndexConverter;
     private final RiakLinksConverter<T> riakLinksConverter;
     private String defaultKey;
+
+    static {
+        System.out.println("creating objectmapperoha!!!!!!!!!!!!!");
+        objectMapper = new ObjectMapper();
+        objectMapper.registerModule(new RiakJacksonModule());
+    }
 
     /**
      * Create a JSONConverter for creating instances of <code>clazz</code> from
