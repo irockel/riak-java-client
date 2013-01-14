@@ -45,7 +45,7 @@ import com.basho.riak.client.query.indexes.RiakIndexes;
  */
 public class JSONConverter<T> implements Converter<T> {
 
-    private static ObjectMapper objectMapper;
+    private static final ObjectMapper objectMapper;
     private final Class<T> clazz;
     private final String bucket;
     private final UsermetaConverter<T> usermetaConverter;
