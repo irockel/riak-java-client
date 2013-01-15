@@ -30,6 +30,7 @@ import com.basho.riak.client.builders.RiakObjectBuilder;
 import com.basho.riak.client.cap.VClock;
 import com.basho.riak.client.http.util.Constants;
 import com.basho.riak.client.query.indexes.RiakIndexes;
+import org.codehaus.jackson.JsonParser;
 
 /**
  * Converts a RiakObject's value to an instance of T. T must have a field
@@ -57,6 +58,8 @@ public class JSONConverter<T> implements Converter<T> {
         System.out.println("creating objectmapperoha!!!!!!!!!!!!!");
         objectMapper = new ObjectMapper();
         objectMapper.registerModule(new RiakJacksonModule());
+        objectMapper.configure(JsonParser.Feature.CANONICALIZE_FIELD_NAMES, false);
+        objectMapper.configure(JsonParser.Feature.INTERN_FIELD_NAMES, false);
     }
 
     /**
@@ -90,7 +93,6 @@ public class JSONConverter<T> implements Converter<T> {
         this.usermetaConverter = new UsermetaConverter<T>();
         this.riakIndexConverter = new RiakIndexConverter<T>();
         this.riakLinksConverter = new RiakLinksConverter<T>();
-        objectMapper.registerModule(new RiakJacksonModule());
     }
 
     /**
