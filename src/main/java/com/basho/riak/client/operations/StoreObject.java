@@ -55,6 +55,7 @@ public class StoreObject<T> implements RiakOperation<T> {
     private final StoreMeta.Builder storeMetaBuilder = new StoreMeta.Builder();
 
     private boolean returnBody = false;
+    private boolean returnHead = false;
     private boolean doNotFetch = false;
 
     private Mutation<T> mutation;
@@ -120,7 +121,7 @@ public class StoreObject<T> implements RiakOperation<T> {
         
         
         final IRiakObject o = converter.fromDomain(mutated, vclock);
-        final StoreMeta storeMeta = storeMetaBuilder.returnBody(returnBody).build();
+        final StoreMeta storeMeta = storeMetaBuilder.returnBody(returnBody || returnHead).build();
 
         // if non match and if not modified require extra data for the HTTP API
         // pull that from the riak object if possible
@@ -140,11 +141,16 @@ public class StoreObject<T> implements RiakOperation<T> {
 
         final Collection<T> storedSiblings = new ArrayList<T>(stored.numberOfValues());
 
-        for (IRiakObject s : stored) {
-            storedSiblings.add(converter.toDomain(s));
+        if (returnHead && (stored.numberOfValues() == 1) && (stored.getVclock() != null)) {
+            VClockUtil.setVClock(mutated, stored.getVclock());
+            return mutated;
+        } else {
+            for (IRiakObject s : stored) {
+                storedSiblings.add(converter.toDomain(s));
+            }
+            return resolver.resolve(storedSiblings);
         }
 
-        return resolver.resolve(storedSiblings);
     }
 
     /**
@@ -359,6 +365,16 @@ public class StoreObject<T> implements RiakOperation<T> {
         return this;
     }
 
+    /**
+     * Should the store operation return a response body?
+     * @param returnBody
+     * @return this
+     */
+    public StoreObject<T> returnHead(boolean returnHead) {
+        this.returnHead = returnHead;
+        return this;
+    }
+    
     /**
      * Default is false (i.e. NOT a conditional store).
      * <p>
