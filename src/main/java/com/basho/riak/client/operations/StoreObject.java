@@ -57,11 +57,12 @@ public class StoreObject<T> implements RiakOperation<T> {
     private boolean returnBody = false;
     private boolean returnHead = false;
     private boolean doNotFetch = false;
-
+    private boolean deletedVClockWithReturnbody = false;
+    
     private Mutation<T> mutation;
     private ConflictResolver<T> resolver;
     private Converter<T> converter;
-
+    
     /**
      * Create a new StoreObject operation for the object in <code>bucket</code>
      * at <code>key</code>.
@@ -133,24 +134,40 @@ public class StoreObject<T> implements RiakOperation<T> {
             storeMeta.lastModified(o.getLastModified());
         }
 
-        final RiakResponse stored = retrier.attempt(new Callable<RiakResponse>() {
-            public RiakResponse call() throws Exception {
-                return client.store(o, storeMeta);
+        final boolean hasMutated =
+                mutation instanceof ConditionalStoreMutation<?>
+                ? ((ConditionalStoreMutation<T>) mutation).hasMutated()
+                : true;
+
+        if (hasMutated) {
+            final RiakResponse stored = retrier.attempt(new Callable<RiakResponse>() {
+                public RiakResponse call() throws Exception {
+                    return client.store(o, storeMeta);
+                }
+            });
+
+            final Collection<T> storedSiblings = new ArrayList<T>(stored.numberOfValues());
+
+            // both HTTP and Protocol buffers will return tombstone siblings on a 
+            // returnbody=true. There is no 'deletedvclock' option in RpbPutReq and
+            // HTTP just always returns them. This makes returnbody=true consistent 
+            // with a fetch operation. See: returnDeletedVClock() below
+            if (returnHead && (stored.numberOfValues() == 1) && (stored.getVclock() != null)) {
+                VClockUtil.setVClock(mutated, stored.getVclock());
+                return mutated;
+            } else {
+                for (IRiakObject s : stored) {
+                    if (s.isDeleted() && !deletedVClockWithReturnbody) {
+                        continue;
+                    }
+                    storedSiblings.add(converter.toDomain(s));
+                }
+                return resolver.resolve(storedSiblings);
             }
-        });
 
-        final Collection<T> storedSiblings = new ArrayList<T>(stored.numberOfValues());
-
-        if (returnHead && (stored.numberOfValues() == 1) && (stored.getVclock() != null)) {
-            VClockUtil.setVClock(mutated, stored.getVclock());
-            return mutated;
         } else {
-            for (IRiakObject s : stored) {
-                storedSiblings.add(converter.toDomain(s));
-            }
-            return resolver.resolve(storedSiblings);
+            return mutated;
         }
-
     }
 
     /**
@@ -255,6 +272,7 @@ public class StoreObject<T> implements RiakOperation<T> {
      */
     public StoreObject<T> returnDeletedVClock(boolean returnDeletedVClock) {
         this.fetchObject.returnDeletedVClock(returnDeletedVClock);
+        deletedVClockWithReturnbody = true;
         return this;
     }
 

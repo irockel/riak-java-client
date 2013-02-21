@@ -27,7 +27,7 @@ The current riak-java-client is available from maven central. Add the dependency
     <dependency>
         <groupId>com.basho.riak</groupId>
         <artifactId>riak-client</artifactId>
-        <version>1.0.7</version>
+        <version>1.1.0</version>
         <type>pom</type>
     </dependency>
 #+END_SRC
@@ -437,7 +437,7 @@ Adding Key Filters is just like adding phases:
 Please see the [[http://wiki.basho.com/Key-Filters.html][Key Filters documentation]] for more details about key filters and
 the 
 #+BEGIN_SRC java
-    com.basho.riak.client.query.filters.*
+    com.basho.riak.client.query.filter.*
 #+END_SRC
 package for the available filters.
 
