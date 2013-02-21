@@ -22,8 +22,8 @@ import java.util.Collection;
 import java.util.Map;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.core.JsonFactory;
 import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.core.JsonParser;
 
 import com.basho.riak.client.IRiakObject;
 import com.basho.riak.client.RiakLink;
@@ -57,6 +57,8 @@ public class JSONConverter<T> implements Converter<T> {
     static {
         objectMapper = new ObjectMapper();
         objectMapper.registerModule(new RiakJacksonModule());
+        objectMapper.getFactory().configure(JsonFactory.Feature.CANONICALIZE_FIELD_NAMES, false);
+        objectMapper.getFactory().configure(JsonFactory.Feature.INTERN_FIELD_NAMES, false);
     }
 
     /**
