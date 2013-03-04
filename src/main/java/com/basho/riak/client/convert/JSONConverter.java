@@ -31,6 +31,7 @@ import com.basho.riak.client.builders.RiakObjectBuilder;
 import com.basho.riak.client.cap.VClock;
 import com.basho.riak.client.http.util.Constants;
 import com.basho.riak.client.query.indexes.RiakIndexes;
+import com.fasterxml.jackson.databind.DeserializationFeature;
 
 /**
  * Converts a RiakObject's value to an instance of T. T must have a field
@@ -59,6 +60,7 @@ public class JSONConverter<T> implements Converter<T> {
         objectMapper.registerModule(new RiakJacksonModule());
         objectMapper.getFactory().configure(JsonFactory.Feature.CANONICALIZE_FIELD_NAMES, false);
         objectMapper.getFactory().configure(JsonFactory.Feature.INTERN_FIELD_NAMES, false);
+        objectMapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
     }
 
     /**
